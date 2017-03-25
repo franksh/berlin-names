@@ -1,0 +1,12 @@
+.counties {
+  fill: none;
+}
+
+.states {
+  stroke: white;
+  stroke-linejoin: round;
+}
+
+.paths {
+  fill: white;
+}
