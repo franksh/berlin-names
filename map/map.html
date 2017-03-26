@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<header>
+<head>
   <title>Berlin Names</title>
   <meta charset="utf-8">
   <link rel="stylesheet" type="text/css" href="style.css">
@@ -7,11 +7,21 @@
   <script src="https://d3js.org/d3.v4.min.js"></script>
   <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
   <script src="https://d3js.org/topojson.v2.min.js"></script>
-</header>
+</head>
 
 <body>
+  <header>
+    Berlin Names
+  </header>
+  <div class="flex-container">
+    <div id="left-column">
+      <svg width="600" height="400" margin="10px"></svg>
+    </div>
 
-  <svg width="960" height="600"></svg>
+    <div id="right-column">
+      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+    </div>
+  </div>
 
   <script>
 
@@ -76,9 +86,9 @@
     if (error) throw error;
 
     var projection = d3.geo.mercator()
-       .center([13.5,52.55])
+       .center([13.7,52.5])
       //.rotate([0, 0])
-      .scale(55000);
+      .scale(40000);
       //.parallels([50,10])
     //  .translate([width/1000, height/0.5]);
 
