@@ -5,6 +5,13 @@
 .states {
   stroke: white;
   stroke-linejoin: round;
+  opacity: 0.5
+}
+
+.highlighted {
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  opacity: 1;
 }
 
 .paths {

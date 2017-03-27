@@ -80,15 +80,15 @@
   d3.queue()
       .defer(d3.json, "bezirke.topojson")
       //.defer(d3.tsv, "unemployment.tsv", function(d) { unemployment.set(d.id, +d.rate); })
-      .await(ready);
+      .await(loadMap);
 
-  function ready(error, bezirke) {
+  function loadMap(error, bezirke) {
     if (error) throw error;
 
     var projection = d3.geo.mercator()
-       .center([13.7,52.5])
+        .center([13.7,52.5])
       //.rotate([0, 0])
-      .scale(40000);
+        .scale(40000);
       //.parallels([50,10])
     //  .translate([width/1000, height/0.5]);
 
@@ -103,15 +103,49 @@
         .attr("class", "states")
         .attr("d", path)
         .attr("fill", "#0099CC")
-        .style("opacity", 0.5)
+        .attr("highlighted", "false")
+        //.style("opacity", 0.5)
         .on("mouseover", function(d) {
-          d3.select(this)
-            .transition().duration(200).style("opacity", 0.8);
+          var state = d3.select(this);
+          if (!state.classed("highlighted")) {
+            state
+              .transition().duration(200)
+              .style("opacity", 0.8);
+          }
         })
-        .on("mouseout", function() {
-          d3.select(this)
-            .transition().duration(200).style("opacity", 0.5);
-        });
+        .on("mouseout", mouseOutState)
+        .on("click", highlight);
+
+
+
+    function mouseOutState(d) {
+    //  console.log(d3.select(this));
+      var state = d3.select(this);
+      //if (!state.classed("highlighted")) {
+        state
+          .transition().duration(200)
+          // Style here is element property while in css is class property
+          .style("opacity", null);
+      //}
+    }
+
+    function highlight(d) {
+      console.log(d);
+      //svg.selectAll(".states");
+
+      d3.selectAll(".states")
+        .classed("highlighted", false)
+
+      d3.select(this)
+      //.transition().duration(300)
+      .classed("highlighted", true);
+      //.attr("highlighted", true);
+      //.style("stroke-width", "3px")
+      //.style("opacity", 1);
+
+      d3.selectAll(".states").each(mouseOutState);
+    }
+
 
         /*
     svg.append("g")
