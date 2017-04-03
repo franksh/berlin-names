@@ -19,6 +19,7 @@
     </div>
 
     <div id="right-column">
+      <h2 id="bezirk-title">Title</h2>
       <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
     </div>
   </div>
@@ -105,45 +106,57 @@
         .attr("fill", "#0099CC")
         .attr("highlighted", "false")
         //.style("opacity", 0.5)
-        .on("mouseover", function(d) {
-          var state = d3.select(this);
-          if (!state.classed("highlighted")) {
-            state
-              .transition().duration(200)
-              .style("opacity", 0.8);
-          }
-        })
-        .on("mouseout", mouseOutState)
-        .on("click", highlight);
+        .on("mouseover", mouseOver)
+        .on("mouseout", mouseOut)
+        .on("click", selectState);
 
-
-
-    function mouseOutState(d) {
-    //  console.log(d3.select(this));
+    function mouseOver(d) {
       var state = d3.select(this);
-      //if (!state.classed("highlighted")) {
+      console.log(d.properties.id);
+      highlightState(state);
+    }
+
+    function mouseOut(d) {
+      var state = d3.select(this);
+      unhighlightState(state);
+    }
+
+    function highlightState(state) {
+      if (!state.classed("selected-state")) {
         state
           .transition().duration(200)
-          // Style here is element property while in css is class property
-          .style("opacity", null);
+          .style("opacity", 0.8);
+      }
+    }
+
+    function unhighlightState(state) {
+      //console.log(d3.select(this));
+      //var state = d3.select(this);
+      //if (!state.classed("highlighted")) {
+      state
+        .transition().duration(200)
+        // Style here is element property while in css is class property
+        .style("opacity", null);
       //}
     }
 
-    function highlight(d) {
-      console.log(d);
+    function selectState(d) {
+      //console.log(d);
       //svg.selectAll(".states");
+      d3.selectAll("#bezirk-title").text(d.properties.id);
 
       d3.selectAll(".states")
-        .classed("highlighted", false)
+        .classed("selected-state", false)
 
       d3.select(this)
       //.transition().duration(300)
-      .classed("highlighted", true);
+      .classed("selected-state", true);
       //.attr("highlighted", true);
       //.style("stroke-width", "3px")
       //.style("opacity", 1);
 
-      d3.selectAll(".states").each(mouseOutState);
+      //d3.selectAll(".states")
+      //.each(unhighlightState);
     }
 
 
