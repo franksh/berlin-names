@@ -1,3 +1,7 @@
+h2 {
+  text-align: center;
+}
+
 .counties {
   fill: none;
 }
@@ -25,7 +29,7 @@
   flex-flow: row wrap;
   width: 1200px;
   height: 900px;
-  background-color: lightgrey;
+  background-color: white;lightgrey;
 }
 
 #right-column {
@@ -38,4 +42,12 @@
 
 #bezirk-title {
   text-align: center;
+}
+
+#nameBox {
+  margin: auto;
+}
+
+.tableheader {
+  font-size: 18px;
 }

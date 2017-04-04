@@ -10,9 +10,9 @@
 </head>
 
 <body>
-  <header>
-    Berlin Names
-  </header>
+
+  <h2>Berlin Names</h2>
+
   <div class="flex-container">
     <div id="left-column">
       <svg width="600" height="400" margin="10px"></svg>
@@ -31,6 +31,15 @@
       height = +svg.attr("height");
 
   var map = d3.map();
+
+  var nameBox = d3.select("#right-column")
+                  .append("table")
+                  .attr("id", "nameBox");
+
+  nameBox.append("tr")
+          .append("td")
+          .text("Beliebteste Vornamen")
+          .attr("class", "tableheader");
 
   //var path = d3.geoPath();
 
@@ -155,6 +164,23 @@
       //.style("stroke-width", "3px")
       //.style("opacity", 1);
 
+      console.log(d.properties.id);
+
+      var datas = [1,3,4,5];
+      nameBox.selectAll(".tablerow")
+        .data(datas).enter()
+        .append("tr")
+        .attr("class", "tablerow")
+        .append("td")
+        .text(function(d) {return d;});
+      /*
+      nameBox.selectAll("tablerow")
+        .data(d.properties.id).enter()
+        .append("tr")
+        .attr("class", "tablerow")
+        .append("td")
+        .text(d.properties.id);
+      */
       //d3.selectAll(".states")
       //.each(unhighlightState);
     }
