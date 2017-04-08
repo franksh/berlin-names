@@ -20,7 +20,6 @@
 
     <div id="right-column">
       <h2 id="bezirk-title">Title</h2>
-      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
     </div>
   </div>
 
@@ -40,6 +39,11 @@
           .append("td")
           .text("Beliebteste Vornamen")
           .attr("class", "tableheader");
+
+  var percentScale = d3.scale.linear()
+                        .domain([50,200])
+                        .interpolate(d3.interpolateHcl)
+                        .range([d3.rgb("#bfbfbf"), d3.rgb("#1aff66")]);
 
   //var path = d3.geoPath();
 
@@ -86,6 +90,27 @@
     .select(".domain")
       .remove();
   */
+  var namedata = [];
+
+  d3.csv("../data/processed/beliebte_namen_2016.csv", function(data) {
+    // Parse data
+    data.forEach(function(d) {
+      d.anzahl = +d.anzahl; //convert to number
+      d.freq_dev = +d.freq_dev;
+    });
+    namedata = data;
+
+  });
+
+  /*
+  var datas = [1,3,4,5, 6];
+  nameBox.selectAll(".tablerow")
+    .data(datas).enter()
+    .append("tr")
+    .attr("class", "tablerow")
+    .append("td")
+    .text(function(d) {return d;});
+  */
 
   d3.queue()
       .defer(d3.json, "bezirke.topojson")
@@ -114,10 +139,13 @@
         .attr("d", path)
         .attr("fill", "#0099CC")
         .attr("highlighted", "false")
+        .attr("name", function(d){return d.properties.id;})
         //.style("opacity", 0.5)
         .on("mouseover", mouseOver)
         .on("mouseout", mouseOut)
         .on("click", selectState);
+
+
 
     function mouseOver(d) {
       var state = d3.select(this);
@@ -155,7 +183,7 @@
       d3.selectAll("#bezirk-title").text(d.properties.id);
 
       d3.selectAll(".states")
-        .classed("selected-state", false)
+        .classed("selected-state", false);
 
       d3.select(this)
       //.transition().duration(300)
@@ -166,13 +194,78 @@
 
       console.log(d.properties.id);
 
-      var datas = [1,3,4,5];
+      var selectedBezirk = d.properties.id;
+
+      /*
+
+      // Update existing entries
       nameBox.selectAll(".tablerow")
-        .data(datas).enter()
+        .data(namedata.filter(function(d) {return d.bezirk==selectedBezirk;}))
+        .text(function(d) {return d.vorname;});
+
+      // Create new rows for all non-existing entries
+      nameBox.selectAll(".tablerow")
+        .data(namedata.filter(function(d) {return d.bezirk==selectedBezirk;}))
+        .enter()
         .append("tr")
         .attr("class", "tablerow")
         .append("td")
-        .text(function(d) {return d;});
+        .text(function(d) {
+          return d.vorname;
+        })
+        .append("td")
+        .text(function(d) {return d.freq_dev;});
+      */
+
+      var columns = ['vorname', 'freq_dev', 'geschlecht'];
+
+      var bezirkdata = namedata.filter(function(d) {return d.bezirk==selectedBezirk;});
+
+      // Update existing rows
+      var rows = nameBox.selectAll(".tablerow")
+            .data(bezirkdata)
+            .attr("class", "tablerow");
+
+      rows.selectAll("td")
+        .data(function(row) {
+          return columns.map(function(column) {
+            return {value: row[column], name:column};
+          });
+        })
+        .text(function(d) { return d.value; })
+        .style("color", function(d){
+          if (d.name=='freq_dev') {
+            return percentScale(d.value);
+          }
+        })
+        ;
+
+      // Create new rows
+      var rows = nameBox.selectAll(".tablerow")
+            .data(bezirkdata)
+            .enter()
+            .append("tr")
+            .attr("class", "tablerow");
+
+      rows.selectAll("td")
+        .data(function(row) {
+          return columns.map(function(column) {
+            return {value: row[column], name:column};
+          });
+        })
+        .enter()
+        .append("td")
+        .text(function(d) { return d.value; })
+        .attr("class", function(d) {return d.name;})
+        .style("color", function(d){
+          if (d.name=='freq_dev') {
+            return percentScale(d.value);
+          }
+        })
+        ;
+
+
+
       /*
       nameBox.selectAll("tablerow")
         .data(d.properties.id).enter()
@@ -183,6 +276,9 @@
       */
       //d3.selectAll(".states")
       //.each(unhighlightState);
+      d3.selectAll(".states")
+        .classed("name", "Mitte")
+        .style("color", function(d){console.log(d); return "white";})
     }
 
 
@@ -204,7 +300,12 @@
         .attr("class", "states")
         .attr("d", path);
   */
+
+
+
   }
+
+
 
   </script>
 </body>
