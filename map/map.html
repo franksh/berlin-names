@@ -19,7 +19,7 @@
     </div>
 
     <div id="right-column">
-      <h2 id="bezirk-title">Title</h2>
+      <h2 id="bezirk-title"></h2>
     </div>
   </div>
 
@@ -31,19 +31,54 @@
 
   var map = d3.map();
 
+  // LOAD DATA /////////////////////////////////////
+
+    var namedata = [];
+
+    d3.csv("beliebte_namen_2016.csv", function(data) {
+    //d3.csv("../data/processed/beliebte_namen_2016.csv", function(data) {
+      // Parse data
+      data.forEach(function(d) {
+        d.anzahl = +d.anzahl; //convert to number
+        d.freq_dev = +d.freq_dev;
+      });
+      namedata = data;
+    });
+
+
+  var boxWidth = 500;
+
   var nameBox = d3.select("#right-column")
                   .append("table")
-                  .attr("id", "nameBox");
+                  .attr("id", "nameBox")
+                  .attr("width", boxWidth);
 
   nameBox.append("tr")
           .append("td")
-          .text("Beliebteste Vornamen")
+          .text("Ungewöhnlich häufige Vornamen")
           .attr("class", "tableheader");
 
+  // colorScale for the Percent numbers
   var percentScale = d3.scale.linear()
                         .domain([50,200])
                         .interpolate(d3.interpolateHcl)
                         .range([d3.rgb("#bfbfbf"), d3.rgb("#1aff66")]);
+
+  var chartWidth = 500;
+  var chartMarginLeft = 10;
+  var barLength = chartWidth - chartMarginLeft;
+
+  var barScale = d3.scale.linear()
+                    .domain([0, 200])
+                    .range([0, barLength]);
+
+  var chart = d3.select("#right-column")
+                .append("div")
+                .attr("width", chartWidth)
+                .style("margin-left", function(d){return chartMarginLeft+'px';})
+                .attr("class", "chart");
+
+
 
   //var path = d3.geoPath();
 
@@ -90,32 +125,15 @@
     .select(".domain")
       .remove();
   */
-  var namedata = [];
 
-  d3.csv("../data/processed/beliebte_namen_2016.csv", function(data) {
-    // Parse data
-    data.forEach(function(d) {
-      d.anzahl = +d.anzahl; //convert to number
-      d.freq_dev = +d.freq_dev;
-    });
-    namedata = data;
 
-  });
 
-  /*
-  var datas = [1,3,4,5, 6];
-  nameBox.selectAll(".tablerow")
-    .data(datas).enter()
-    .append("tr")
-    .attr("class", "tablerow")
-    .append("td")
-    .text(function(d) {return d;});
-  */
 
   d3.queue()
       .defer(d3.json, "bezirke.topojson")
-      //.defer(d3.tsv, "unemployment.tsv", function(d) { unemployment.set(d.id, +d.rate); })
       .await(loadMap);
+
+  // LOAD MAP ////////////////////////////////////
 
   function loadMap(error, bezirke) {
     if (error) throw error;
@@ -127,9 +145,11 @@
       //.parallels([50,10])
     //  .translate([width/1000, height/0.5]);
 
+
     var path = d3.geo.path()
           .projection(projection);
 
+    // Draw states on map
     var states = topojson.feature(bezirke, bezirke.objects.states);
 
     svg.selectAll(".states")
@@ -143,13 +163,14 @@
         //.style("opacity", 0.5)
         .on("mouseover", mouseOver)
         .on("mouseout", mouseOut)
-        .on("click", selectState);
-
+        .on("click", selectState)
+        .filter(function(d) {return d.properties.id=="Mitte";})
+        .each(selectState);
 
 
     function mouseOver(d) {
       var state = d3.select(this);
-      console.log(d.properties.id);
+      //console.log(d.properties.id);
       highlightState(state);
     }
 
@@ -178,8 +199,8 @@
     }
 
     function selectState(d) {
-      //console.log(d);
-      //svg.selectAll(".states");
+
+      // Update Title in right row
       d3.selectAll("#bezirk-title").text(d.properties.id);
 
       d3.selectAll(".states")
@@ -192,34 +213,13 @@
       //.style("stroke-width", "3px")
       //.style("opacity", 1);
 
-      console.log(d.properties.id);
+      // UPDATE TABLE
 
       var selectedBezirk = d.properties.id;
+      var columns = ['vorname', 'freq_dev', 'geschlecht'];
+      var bezirkdata = namedata.filter(function(d) {return d.bezirk==selectedBezirk;});
 
       /*
-
-      // Update existing entries
-      nameBox.selectAll(".tablerow")
-        .data(namedata.filter(function(d) {return d.bezirk==selectedBezirk;}))
-        .text(function(d) {return d.vorname;});
-
-      // Create new rows for all non-existing entries
-      nameBox.selectAll(".tablerow")
-        .data(namedata.filter(function(d) {return d.bezirk==selectedBezirk;}))
-        .enter()
-        .append("tr")
-        .attr("class", "tablerow")
-        .append("td")
-        .text(function(d) {
-          return d.vorname;
-        })
-        .append("td")
-        .text(function(d) {return d.freq_dev;});
-      */
-
-      var columns = ['vorname', 'freq_dev', 'geschlecht'];
-
-      var bezirkdata = namedata.filter(function(d) {return d.bezirk==selectedBezirk;});
 
       // Update existing rows
       var rows = nameBox.selectAll(".tablerow")
@@ -263,8 +263,64 @@
           }
         })
         ;
+        */
+
+        // CHART //////////////////////////
+
+        console.log(d3.max(bezirkdata, function(d){return d.freq_dev;}));
+        console.log(
+            d3.max(d3.map(bezirkdata, function(d){return d.freq_dev;}).keys())
+          );
 
 
+
+        function updateChart(namedata) {
+
+          // Update scale
+          var domainMax = d3.max(bezirkdata, function(d){return d.freq_dev;})
+          var domainMin = d3.min(bezirkdata, function(d){return d.freq_dev;})
+          var barScale = d3.scale.linear()
+                            .domain([0, domainMax])
+                            .range([0, barLength]);
+
+          var percentScale = d3.scale.linear()
+                                .domain([domainMin*0.8,domainMax])
+                                .interpolate(d3.interpolateHcl)
+                                .range([d3.rgb("#999999"), d3.rgb("#00b300")]);
+
+          d3.select(".chart")
+            .selectAll("div")
+            .data(bezirkdata)
+            .enter().append("div")
+            .style("width", function(d) { return barScale(d.freq_dev) + 'px'; })
+            .text(function(d){return d.vorname +'    +' +d.freq_dev+'%';});
+
+          d3.select(".chart")
+            .selectAll("div")
+            .data(bezirkdata)
+            .transition(200)
+            .style("width", function(d) { return barScale(d.freq_dev) + 'px'; })
+            .style("background-color", function(d) {return percentScale(d.freq_dev);})
+            .text(function(d){return d.vorname +'  +' +d.freq_dev+'%';});
+
+          var xScale = d3.scale.ordinal()
+          var xAxis = d3.svg.axis()
+                        .scale(xScale)
+                        .orient("left");
+
+          d3.select(".chart")
+            .selectAll("div")
+            .data(bezirkdata)
+            .append("text")
+            .text(function(d){console.log(d.offsetLeft);return d.vorname;})
+            .attr("x", function(d) {return d.x;})
+            .attr("y", function(d) {return d.y;})
+            .style("stroke", "black");
+            ;
+
+        };
+
+        updateChart(namedata);
 
       /*
       nameBox.selectAll("tablerow")
@@ -276,12 +332,25 @@
       */
       //d3.selectAll(".states")
       //.each(unhighlightState);
-      d3.selectAll(".states")
-        .classed("name", "Mitte")
-        .style("color", function(d){console.log(d); return "white";})
+
     }
 
+    d3.selectAll(".states")
+      //.classed("name", "Mitte")
+      .filter(function(d) {return d.properties.id=="Mitte";})
+      //.style('color', 'white');
+      .style("color", function(d){console.log(d); return "white";})
 
+    svg.selectAll(".states")
+          //  .data(states.features)
+        .filter(function(d) {return d.properties.id=="Mitte";})
+        .enter().append("path")
+        .attr("class", "states")
+        .attr("d", path)
+        .attr("fill", "white")//"#0099CC")
+        .attr("highlighted", "false")
+        .attr("name", function(d){return d.properties.id;})
+    //selectState(data);
         /*
     svg.append("g")
         .attr("class", "states")
