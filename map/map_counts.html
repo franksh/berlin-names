@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<head>
+  <title>Berlin Names</title>
+  <meta charset="utf-8">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+  <script src="https://d3js.org/topojson.v2.min.js"></script>
+</head>
+
+<body>
+
+  <h2>Berlin Names</h2>
+
+  <div class="flex-container">
+    <div id="left-column">
+      <svg width="600" height="400" margin="10px"></svg>
+    </div>
+
+    <div id="right-column">
+      <h2 id="bezirk-title"></h2>
+    </div>
+  </div>
+
+  <script>
+
+  var svg = d3.select("svg"),
+      width = +svg.attr("width"),
+      height = +svg.attr("height");
+
+  var map = d3.map();
+
+  // LOAD DATA /////////////////////////////////////
+
+    var countdata = [];
+
+
+    // d3.csv("counts.csv", function(data) {
+    // //d3.csv("../data/processed/beliebte_namen_2016.csv", function(data) {
+    //   // Parse data
+    //   data.forEach(function(d) {
+    //     d.anzahl = +d.anzahl; //convert to number
+    //     d.year = +d.year; //convert to number
+    //
+    //   });
+    //   countdata = data;
+    // });
+
+    d3.csv("counts.csv", function(data) {
+    //d3.csv("../data/processed/beliebte_namen_2016.csv", function(data) {
+      // Parse data
+      var entries = d3.nest()
+                      .key(function(d) { return d.bezirk; })
+                      .key(function(d) { return +d.year; })
+                      .map(data);
+      // console.log(entries);
+
+      // data.forEach(function(d) {
+      //   d.anzahl = +d.anzahl; //convert to number
+      //   d.year = +d.year; //convert to number
+      //
+      // });
+      countdata = entries;
+    });
+
+  var boxWidth = 500;
+
+
+  var chartWidth = 500;
+  var chartMarginLeft = 10;
+  var barLength = chartWidth - chartMarginLeft;
+
+  var barScale = d3.scale.linear()
+                    .domain([0, 200])
+                    .range([0, barLength]);
+
+  var chart = d3.select("#right-column")
+                .append("div")
+                .attr("width", chartWidth)
+                .style("margin-left", function(d){return chartMarginLeft+'px';})
+                .attr("class", "chart");
+
+
+
+  d3.queue()
+      .defer(d3.json, "bezirke.topojson")
+      .await(loadMap);
+
+  // LOAD MAP ////////////////////////////////////
+
+  function loadMap(error, bezirke) {
+    if (error) throw error;
+
+    var projection = d3.geo.mercator()
+        .center([13.7,52.5])
+      //.rotate([0, 0])
+        .scale(40000);
+      //.parallels([50,10])
+    //  .translate([width/1000, height/0.5]);
+
+
+    var path = d3.geo.path()
+          .projection(projection);
+
+    // Draw states on map
+    var states = topojson.feature(bezirke, bezirke.objects.states);
+
+
+    svg.selectAll(".states")
+        .data(states.features)
+        .enter().append("path")
+        .attr("class", "states")
+        .attr("d", path)
+        .attr("fill", "#0099CC")
+        .attr("highlighted", "false")
+        .attr("name", function(d){return d.properties.id;})
+        //.style("opacity", 0.5)
+        // .on("mouseover", mouseOver)
+        // .on("mouseout", mouseOut)
+        // .on("click", selectState)
+        // .filter(function(d) {return d.properties.id=="Mitte";})
+        // .each(selectState);
+
+    // Store centers
+    var centroids = states.features.map(function (feature){
+      centroid = [feature.properties.id, path.centroid(feature)];
+      // return path.centroid(feature);
+      return centroid;
+
+    } );
+
+    console.log(centroids);
+
+    svg.selectAll(".centroid").data(centroids)
+      .enter().append("circle")
+      .attr("class", "centroid")
+      .attr("fill", "k")
+      .attr("cx", function (d){ return d[1][0]; })
+      .attr("cy", function (d){ return d[1][1]; })
+      .attr("r", function(d){
+        console.log(d[0]);
+        // return 10;
+        return countdata['$' + d[0] ]['$2012'][0]['anzahl'] / 100;
+      });
+
+    // svg.selectAll(".centroid").data(counts)
+      // .enter()
+      // .filter(function(d) {  } )
+
+    centroidcounts = centroids
+
+
+    function mouseOver(d) {
+      var state = d3.select(this);
+      //console.log(d.properties.id);
+      highlightState(state);
+    }
+
+    function mouseOut(d) {
+      var state = d3.select(this);
+      unhighlightState(state);
+    }
+
+    function highlightState(state) {
+      if (!state.classed("selected-state")) {
+        state
+          .transition().duration(200)
+          .style("opacity", 0.8);
+      }
+    }
+
+    function unhighlightState(state) {
+      //console.log(d3.select(this));
+      //var state = d3.select(this);
+      //if (!state.classed("highlighted")) {
+      state
+        .transition().duration(200)
+        // Style here is element property while in css is class property
+        .style("opacity", null);
+      //}
+    }
+
+    function selectState(d) {
+
+      // Update Title in right row
+      d3.selectAll("#bezirk-title").text(d.properties.id);
+
+      d3.selectAll(".states")
+        .classed("selected-state", false);
+
+      d3.select(this)
+      //.transition().duration(300)
+      .classed("selected-state", true);
+      //.attr("highlighted", true);
+      //.style("stroke-width", "3px")
+      //.style("opacity", 1);
+
+      // UPDATE TABLE
+
+      var selectedBezirk = d.properties.id;
+      var columns = ['vorname', 'freq_dev', 'geschlecht'];
+      var bezirkdata = namedata.filter(function(d) {return d.bezirk==selectedBezirk;});
+    }
+
+
+  }
+
+
+
+  </script>
+</body>
