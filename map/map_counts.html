@@ -3,10 +3,18 @@
   <title>Berlin Names</title>
   <meta charset="utf-8">
   <link rel="stylesheet" type="text/css" href="style.css">
-  <script src="https://d3js.org/d3.v3.min.js"></script>
-  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <!-- <script src="https://d3js.org/d3.v3.min.js"></script> -->
+  <script src="js/d3/d3.v3.min.js"></script>
+  <script src="js/d3/d3.v4.min.js"></script>
+  <script src="js/d3/d3-scale-chromatic.v1.min.js"></script>
+  <script src="js/d3/topojson.v2.min.js"></script>
+
+  <script src="js/bower_components/d3-tip/index.js"></script>
+
+
+  <!-- <script src="https://d3js.org/d3.v4.min.js"></script>
   <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
-  <script src="https://d3js.org/topojson.v2.min.js"></script>
+  <script src="https://d3js.org/topojson.v2.min.js"></script> -->
 </head>
 
 <body>
@@ -15,9 +23,11 @@
 
   <div class="flex-container">
     <div id="left-column">
-      <svg width="600" height="400" margin="10px"></svg>
+      <p id = "yeartext">Text</p>
+      <svg id="svgmap" width="600" height="400" margin="10px"></svg>
     </div>
-
+    <div>
+    </div>
     <div id="right-column">
       <h2 id="bezirk-title"></h2>
     </div>
@@ -25,9 +35,19 @@
 
   <script>
 
+  tip = d3.tip()
+        .attr('class', 'd3-tip')
+        .html(function(d) {
+          numbers = countdata['$' + d[0] ]['$2012'][0]['anzahl'];
+          return '<span>' + numbers + ' babies</span>'
+        })
+        .offset([-15, 0]);
+
   var svg = d3.select("svg"),
       width = +svg.attr("width"),
       height = +svg.attr("height");
+
+  svg.call(tip);
 
   var map = d3.map();
 
@@ -83,9 +103,11 @@
 
 
 
-  d3.queue()
+
+  d3.queue(1)
       .defer(d3.json, "bezirke.topojson")
       .await(loadMap);
+      // .await(yearsTransition);
 
   // LOAD MAP ////////////////////////////////////
 
@@ -112,9 +134,9 @@
         .enter().append("path")
         .attr("class", "states")
         .attr("d", path)
-        .attr("fill", "#0099CC")
+        // .attr("fill", "#0099CC")
         .attr("highlighted", "false")
-        .attr("name", function(d){return d.properties.id;})
+        .attr("name", function(d){return d.properties.id;});
         //.style("opacity", 0.5)
         // .on("mouseover", mouseOver)
         // .on("mouseout", mouseOut)
@@ -130,81 +152,114 @@
 
     } );
 
-    console.log(centroids);
 
-    svg.selectAll(".centroid").data(centroids)
+
+
+    var countcircles = svg.selectAll(".centroid").data(centroids)
       .enter().append("circle")
-      .attr("class", "centroid")
-      .attr("fill", "k")
+      .attr("class", "countcircle")
+      // .attr("fill", "k")
       .attr("cx", function (d){ return d[1][0]; })
       .attr("cy", function (d){ return d[1][1]; })
       .attr("r", function(d){
-        console.log(d[0]);
         // return 10;
-        return countdata['$' + d[0] ]['$2012'][0]['anzahl'] / 100;
-      });
+        return getRadiusForYear(d, '2012')
+        // return countdata['$' + d[0] ]['$2012'][0]['anzahl'] / 100;
+      })
+      .on('mouseover', tip.show)
+      .on('mouseout', tip.hide);
+      // .append("text")
 
     // svg.selectAll(".centroid").data(counts)
       // .enter()
       // .filter(function(d) {  } )
 
-    centroidcounts = centroids
 
+      function getRadiusForYear(d, year){
+        // return countdata['$' + d[0] ]['$'+year][0]['anzahl'] / 100;
+        count = countdata['$' + d[0] ]['$'+year][0]['anzahl']
+        return count/80;
+        // return Math.pow(count/250, 1.5);
+        // return Math.exp(Math.sqrt(count/1000));
+        // return Math.sqrt(count/10);
 
-    function mouseOver(d) {
-      var state = d3.select(this);
-      //console.log(d.properties.id);
-      highlightState(state);
-    }
-
-    function mouseOut(d) {
-      var state = d3.select(this);
-      unhighlightState(state);
-    }
-
-    function highlightState(state) {
-      if (!state.classed("selected-state")) {
-        state
-          .transition().duration(200)
-          .style("opacity", 0.8);
       }
-    }
 
-    function unhighlightState(state) {
-      //console.log(d3.select(this));
-      //var state = d3.select(this);
-      //if (!state.classed("highlighted")) {
-      state
-        .transition().duration(200)
-        // Style here is element property while in css is class property
-        .style("opacity", null);
-      //}
-    }
+      function updateYearText(d, year){
+        // document.getElementById('yeartext').text(year);
+        d3.selectAll("#yeartext").text(year);
+      }
 
-    function selectState(d) {
+      function yearsTransition() {
 
-      // Update Title in right row
-      d3.selectAll("#bezirk-title").text(d.properties.id);
+        // var countcircles = svg.selectAll("countcircle");
+        function repeat() {
+          // console.log(countcircles);
 
-      d3.selectAll(".states")
-        .classed("selected-state", false);
+          countcircles.each( function(d) {
 
-      d3.select(this)
-      //.transition().duration(300)
-      .classed("selected-state", true);
-      //.attr("highlighted", true);
-      //.style("stroke-width", "3px")
-      //.style("opacity", 1);
+            delay = 500
+            duration = 1000
 
-      // UPDATE TABLE
+            d3.select(this)
+            .attr('r', getRadiusForYear(d, '2012'))
+            .call(updateYearText, '2012')
+            .transition()
+            .duration(duration)
+            .delay(delay)
+            .attr('r', getRadiusForYear(d, '2013'))
+            .transition()
+            .duration(duration)
+            .delay(delay)
+            .attr('r', getRadiusForYear(d, '2014'))
+            .call(updateYearText, '2014')
+            .transition()
+            .duration(duration)
+            .delay(delay)
+            .attr('r', getRadiusForYear(d, '2015'))
+            .transition()
+            .duration(duration)
+            .delay(delay)
+            .attr('r', getRadiusForYear(d, '2012'))
+            .transition()
+            .duration(duration)
+            .delay(delay)
+            .on("end", repeat);
 
-      var selectedBezirk = d.properties.id;
-      var columns = ['vorname', 'freq_dev', 'geschlecht'];
-      var bezirkdata = namedata.filter(function(d) {return d.bezirk==selectedBezirk;});
-    }
+            d3.selectAll("#yeartext")
+              // .delay(duration+delay)
+              .text("2012")
+              .transition()
+              .duration(duration)
+              .delay(delay)
+              .text("2013")
+              .transition()
+              .duration(duration)
+              .delay(delay)
+              .text("2014")
+              .transition()
+              .duration(duration)
+              .delay(delay)
+              .text("2015")
+              .transition()
+              .duration(duration)
+              .delay(delay)
+              .text("2012")
+          })
+
+        }
+        repeat();
+
+
+      }
+
+      yearsTransition();
+
 
 
   }
+  // End of Load map
+
 
 
 

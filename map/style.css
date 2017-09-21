@@ -9,13 +9,31 @@ h2 {
 .states {
   stroke: white;
   stroke-linejoin: round;
-  opacity: 0.5
+  opacity: 0.8;
+  fill: #afd4d8;
+}
+
+.countcircle {
+  fill: #f79d74;
+  stroke: #f48553;
+  opacity: 0.8;
 }
 
 .selected-state {
   stroke-width: 4px;
   stroke-linejoin: round;
   opacity: 1;
+}
+
+.d3-tip span {
+  /*color: #ff00c7;*/
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+  pointer-events: none;
 }
 
 .paths {
@@ -38,6 +56,13 @@ h2 {
   height: 300px;
   margin: 10px;
   padding: 20px;
+}
+
+#left-column {
+  background-color: white;
+  margin: 10px;
+  padding: 20px;
+  text-align: center;
 }
 
 #bezirk-title {
