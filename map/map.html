@@ -3,7 +3,7 @@
   <title>Berlin Names</title>
   <meta charset="utf-8">
   <link rel="stylesheet" type="text/css" href="style.css">
-  <script src="https://d3js.org/d3.v3.min.js"></script>
+  <!-- <script src="https://d3js.org/d3.v3.min.js"></script> -->
   <script src="https://d3js.org/d3.v4.min.js"></script>
   <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
   <script src="https://d3js.org/topojson.v2.min.js"></script>
@@ -15,17 +15,18 @@
 
   <div class="flex-container">
     <div id="left-column">
-      <svg width="600" height="400" margin="10px"></svg>
+      <svg id='svg_map' width="600" height="400" margin="10px"></svg>
     </div>
 
     <div id="right-column">
       <h2 id="bezirk-title"></h2>
     </div>
+
   </div>
 
   <script>
 
-  var svg = d3.select("svg"),
+  var svg = d3.select("#svg_map"),
       width = +svg.attr("width"),
       height = +svg.attr("height");
 
@@ -42,7 +43,9 @@
         d.anzahl = +d.anzahl; //convert to number
         d.freq_dev = +d.freq_dev;
       });
-      namedata = data;
+      // namedata = data;
+      // SORTED ACCORDING TO SIZE
+      namedata = data.sort(function(a,b){return b.freq_dev-a.freq_dev;})
     });
 
 
@@ -59,26 +62,63 @@
           .attr("class", "tableheader");
 
   // colorScale for the Percent numbers
-  var percentScale = d3.scale.linear()
-                        .domain([50,200])
+  var percentScale = d3.scaleLinear()
+                        .domain([50,300])
                         .interpolate(d3.interpolateHcl)
-                        .range([d3.rgb("#bfbfbf"), d3.rgb("#1aff66")]);
+                        // .range(["#bfbfbf", "#1aff66"]);
+                        .range(["#0f715d", "#1de2ba"]);
 
-  var chartWidth = 500;
-  var chartMarginLeft = 10;
-  var barLength = chartWidth - chartMarginLeft;
+                        // my green #18bc9c
+                        // my blue #2c3e50
+                        // .range([d3.rgb("#bfbfbf"), d3.rgb("#1aff66")]);
+  // var percentScale = d3.scaleSequential(d3.interpolateInferno)
+                        // .domain([50,200])
 
-  var barScale = d3.scale.linear()
+  var chartWidth = 400;
+  var chartHeight = 400;
+  var chartMarginLeft = 20;
+  var chartMarginRight = 100;
+  var chartSpaceAxisBars = 40;
+  var barLength = chartWidth - chartMarginLeft - chartMarginRight;
+
+  var barScale = d3.scaleLinear()
                     .domain([0, 200])
                     .range([0, barLength]);
 
+
+
   var chart = d3.select("#right-column")
-                .append("div")
+                .append("svg")
+                .attr("id", "chart_svg")
                 .attr("width", chartWidth)
+                .attr("height", chartHeight)
                 .style("margin-left", function(d){return chartMarginLeft+'px';})
                 .attr("class", "chart");
 
+  // var chart_axis = d3.select("#right-column")
+  //                    .append("svg")
+  //                    .attr("width", chartWidth)
+  //                    .attr("height", "20px")
+  //                    .style("margin-left", function(d){return chartMarginLeft+'px';})
+  //                    .attr("id", "chart_axis")
 
+
+  var xAxis = d3.axisBottom(barScale)
+                .ticks(3)
+                .tickFormat(d => (d+100)/100 + " x");//.scale(barScale);
+
+
+  // d3.select("#chart_axis")
+  // d3.select("#svg_map")
+chart.append("g")
+    .attr("class", "axis")
+    .attr("transform", "translate(5, " + (chartHeight-(chartSpaceAxisBars/1.5)) + ")")// + barLength/2 + ")")
+    // .attr("fill", "black")
+    .call(xAxis);
+
+  // svg.select(".axis")
+  //   .transition()
+  //   .call(xAxis);
 
   //var path = d3.geoPath();
 
@@ -138,7 +178,7 @@
   function loadMap(error, bezirke) {
     if (error) throw error;
 
-    var projection = d3.geo.mercator()
+    var projection = d3.geoMercator()
         .center([13.7,52.5])
       //.rotate([0, 0])
         .scale(40000);
@@ -146,7 +186,7 @@
     //  .translate([width/1000, height/0.5]);
 
 
-    var path = d3.geo.path()
+    var path = d3.geoPath()
           .projection(projection);
 
     // Draw states on map
@@ -219,6 +259,9 @@
       var columns = ['vorname', 'freq_dev', 'geschlecht'];
       var bezirkdata = namedata.filter(function(d) {return d.bezirk==selectedBezirk;});
 
+      bezirkdata = bezirkdata.slice(0, 10);
+
+      // console.log(bezirkdata.length);
       /*
 
       // Update existing rows
@@ -272,44 +315,211 @@
           // Update scale
           var domainMax = d3.max(bezirkdata, function(d){return d.freq_dev;})
           var domainMin = d3.min(bezirkdata, function(d){return d.freq_dev;})
-          var barScale = d3.scale.linear()
-                            .domain([0, domainMax])
-                            .range([0, barLength]);
+          // barScale = d3.scaleLinear()
+          //                   .domain([0, domainMax])
+          //                   .range([0, barLength]);
 
-          var percentScale = d3.scale.linear()
-                                .domain([domainMin*0.8,domainMax])
-                                .interpolate(d3.interpolateHcl)
-                                .range([d3.rgb("#999999"), d3.rgb("#00b300")]);
+          barScale.domain([0, domainMax])
+                  .range([0, barLength]);
+
+          percentScale.domain([domainMin, domainMax]);
+
+          // var percentScale = d3.scaleLinear()
+          //                       .domain([domainMin*0.8,domainMax])
+          //                       .interpolate(d3.interpolateHcl)
+          //                       .range([d3.rgb("#999999"), d3.rgb("#808080")]);
+
+          // Enter
+
+          var bars = d3.select(".chart")
+                        .selectAll(".bar")
+                        .data(bezirkdata)
+                        .enter()
+                        .append("rect")
+                        .attr("class", "bar")
+                        .attr("x", "5px")
+                        .attr("y", function(d, i){
+                            return 10 + (i * (chartHeight-chartSpaceAxisBars)/bezirkdata.length) +"px";
+                          })
+                        .attr("width", function(d) { return barScale(d.freq_dev) + 'px'; })
+                        .attr("height", "5px")
+                        .style("fill", function(d, i) {return percentScale(d.freq_dev);});
+
 
           d3.select(".chart")
-            .selectAll("div")
+            .selectAll(".label")
             .data(bezirkdata)
-            .enter().append("div")
-            .style("width", function(d) { return barScale(d.freq_dev) + 'px'; })
-            .text(function(d){return d.vorname +'    +' +d.freq_dev+'%';});
+            .enter()
+            .append("text")
+            .attr("class", "label")
+            .attr("x", function(d) { return (barScale(d.freq_dev) +10) + 'px'; })
+            .attr("y", function(d, i){
+                return 10 + 8 + (i * (chartHeight-chartSpaceAxisBars)/bezirkdata.length) +"px";
+              })
+            .attr("text-anchor", "start")
+            .text(function(d) {return d.vorname;})
+            .style("fill", function(d, i) {return percentScale(d.freq_dev);});
+
+
+
+          // Update
 
           d3.select(".chart")
-            .selectAll("div")
+            .selectAll(".bar")
             .data(bezirkdata)
             .transition(200)
-            .style("width", function(d) { return barScale(d.freq_dev) + 'px'; })
-            .style("background-color", function(d) {return percentScale(d.freq_dev);})
-            .text(function(d){return d.vorname +'  +' +d.freq_dev+'%';});
+            .attr("width", function(d) { return barScale(d.freq_dev) + 'px'; })
+            // .attr("fill", function(d) {return percentScale(d.freq_dev);});
+            .style("fill", function(d, i) {return percentScale(d.freq_dev);});
 
-          var xScale = d3.scale.ordinal()
-          var xAxis = d3.svg.axis()
-                        .scale(xScale)
-                        .orient("left");
+
+
 
           d3.select(".chart")
-            .selectAll("div")
+            .selectAll(".label")
             .data(bezirkdata)
-            .append("text")
-            .text(function(d){console.log(d.offsetLeft);return d.vorname;})
-            .attr("x", function(d) {return d.x;})
-            .attr("y", function(d) {return d.y;})
-            .style("stroke", "black");
-            ;
+            .transition(200)
+            .attr("x", function(d) { return (barScale(d.freq_dev) +10) + 'px'; })
+            .text(function(d) {return d.vorname;})
+            .style("fill", function(d, i) {return percentScale(d.freq_dev);});
+
+          // d3.select(".")
+
+
+
+
+          // OLD VERSION: WORKS
+
+          //
+          //
+          // var conts = d3.select(".chart")
+          //   .selectAll("div")
+          //   .data(bezirkdata)
+          //   .enter()
+          //   .append("div")
+          //   .attr("class", "cont");
+          //
+          //
+          //
+          // conts.append("div")
+          //   .attr("class", "bar");
+          //   // .text(function(d){return d.vorname;})
+          //
+          // conts.append("circle")
+          //   .attr("class", "endcircle")
+          //   .attr("r", "20px");
+          //
+          // conts.append("span")
+          //   .attr("class", "label")
+          //   .text(function(d){return d.vorname;})
+          //
+          // // UPDATE
+          //
+          // d3.select(".chart")
+          //   .selectAll(".bar")
+          //   .data(bezirkdata)
+          //   .transition(200)
+          //   .style("width", function(d) { return barScale(d.freq_dev) + 'px'; })
+          //   .style("background-color", function(d) {return percentScale(d.freq_dev);});
+          //
+          // d3.select(".chart")
+          //   .selectAll(".endcircle")
+          //   .data(bezirkdata)
+          //   .transition(200)
+          //   .attr('r', '20')
+          //   // .attr("cx", function(d) { return barScale(d.freq_dev) + 'px';})
+          //   // .attr("cy", function(d) { return barScale(d.freq_dev) + 'px';})
+          //   .attr("cx", "100px")
+          //   .attr("cy", "100px")
+          //   .attr("fill", "teal")
+          //   .attr("opacity", 0.8)
+          //   .attr("stroke", "lightblue")
+          //
+          //
+          //
+          // d3.select(".chart")
+          //   .selectAll(".label")
+          //   .data(bezirkdata)
+          //   .transition(200)
+          //   .text(function(d){return d.vorname;})
+
+
+          d3.select(".axis")
+            .transition()
+            .call(xAxis)
+
+          // d3.select(".chart")
+          //   .selectAll(".axis")
+          //   .data(bezirkdata)
+          //   .transition(200)
+          //   .c
+
+
+
+          // var xAxis = d3.select(".chart")
+          //               .append("g")
+          //               .attr("class", "axis")
+          //               .attr("transform", "translate(0,1000)")
+          //               .call(d3.axisTop(barScale));
+          //
+          // d3.select(".")
+
+          // d3.select(".chart")
+          // // svg
+          //   .append("g")
+          //   .attr("class", 'axis')
+          //   // .attr("transform", "translate(0,100)")
+          //   .call(xAxis);
+
+
+
+          // d3.select(".chart")
+          //   .selectAll(".cont")
+          //   // .data(bezirkdata)
+          //   .enter()
+          //   .append("div")
+          //   .attr("class", "label")
+          //   .text("bla");
+          //
+          // d3.select(".chart")
+          //   .selectAll(".cont")
+          //   .data(bezirkdata)
+          //   .text(function(d){return d.vorname;})
+
+
+
+
+                                // ORIGINAL
+          // d3.select(".chart")
+          //   .selectAll("div")
+          //   .data(bezirkdata)
+          //   .enter().append("div")
+          //   .style("width", function(d) { return barScale(d.freq_dev) + 'px'; })
+          //   .text(function(d){return d.vorname +'    +' +d.freq_dev+'%';});
+          //
+          // d3.select(".chart")
+          //   .selectAll("div")
+          //   .data(bezirkdata)
+          //   .transition(200)
+          //   .style("width", function(d) { return barScale(d.freq_dev) + 'px'; })
+          //   .style("background-color", function(d) {return percentScale(d.freq_dev);})
+          //   .text(function(d){return d.vorname +'  +' +d.freq_dev+'%';});
+          //
+          // var xScale = d3.scale.ordinal()
+          // var xAxis = d3.svg.axis()
+          //               .scale(xScale)
+          //               .orient("left");
+          //
+          // d3.select(".chart")
+          //   .selectAll("div")
+          //   .data(bezirkdata)
+          //   .append("text")
+          //   .text(function(d){console.log(d.offsetLeft);return d.vorname;})
+          //   .attr("x", function(d) {return d.x;})
+          //   .attr("y", function(d) {return d.y;})
+          //   .style("stroke", "black");
+          //   ;
+
 
         };
 

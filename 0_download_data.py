@@ -21,7 +21,7 @@ def download_data():
         'treptow-koepenick'
     ]
 
-    years = [2012]
+    years = [2017]
     #years = [2013, 2014, 2015, 2016]
     # Year 2012 has no date in url and filenames are upper case
 
