@@ -1,6 +1,6 @@
 ## Berlin Baby Names
 
-![Berlin Names Screenshot](https://github.com/franksh/berlin-names/processed/berlin-names-screenshot.png)
+![Berlin Names Screenshot](https://github.com/franksh/berlin-names/data/processed/berlin-names-screenshot.png)
 
 An exploration of baby names in Berlin.
 
