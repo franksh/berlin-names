@@ -9,6 +9,167 @@
   <script src="https://d3js.org/topojson.v2.min.js"></script>
 </head>
 
+<style>
+
+body {
+  font-family: sans-serif;
+  font: Helvetica;
+}
+
+
+h2 {
+  text-align: center;
+}
+
+.counties {
+  fill: none;
+}
+
+.states {
+  stroke: white;
+  stroke-linejoin: round;
+  opacity: 0.5;
+  /* fill: #afd4d8; */
+  fill: #2c3e50;
+}
+
+.countcircle {
+  fill: #f79d74;
+  stroke: #f48553;
+  opacity: 0.8;
+}
+
+.selected-state {
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  opacity: 1;
+}
+
+/* .d3-tip span {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+  pointer-events: none;
+} */
+
+.paths {
+  fill: white;
+}
+
+.flex-container {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row wrap;
+  flex-flow: row wrap;
+  width: 1400px;
+  height: 900px;
+  background-color: white;lightgrey;
+}
+
+#right-column {
+  background-color: white;
+  width: 500px;
+  /* height: 300px; */
+  margin: 10px;
+  padding: 20px;
+}
+
+#left-column {
+  background-color: white;
+  margin: 10px;
+  padding: 20px;
+  text-align: center;
+}
+
+#bezirk-title {
+  text-align: center;
+}
+
+#nameBox {
+  margin: auto;
+}
+
+/* .chart div {
+  background-color: steelblue;
+  padding: 5px;
+  margin: 2px;
+  margin-top: 2px;
+  color: white;
+} */
+
+.chart {
+  margin: 30px;
+}
+
+.cont {
+  width: 500px;
+  margin: 3px 0 0 5px;
+  /* display: inline-block; */
+  display: flex;
+  align-items: center;
+}
+
+
+
+rect.bar {
+  /* color: steelblue; */
+  /* padding: 3px; */
+  height: 5px;
+  opacity: 1.0;
+  /* margin: 10px; */
+  /* margin-top: 2px; */
+  /* color: white; */
+  /* display: inline-block; */
+}
+
+.endcircle {
+  fill: 'grey';
+  stroke: 'grey';
+  fill-opacity: 0.5;
+  stroke: 'lightblue'
+  /* width: 100px; */
+  /* height: 100px; */
+}
+
+.label {
+  /* display: inline-block; */
+  font-size: 20px;
+}
+
+.labelbubbles {
+  /* display: inline-block; */
+  font-size: 11px;
+  fill: white;
+}
+
+/* .axis, */
+.axis path,
+.axis line {
+  /* fill: black; */
+  fill: none;
+  stroke: black;
+  stroke-width: 2px;
+  shape-rendering: crispEdges;
+}
+
+/* path.domain { */
+  /* stroke-width: 2px; */
+/* } */
+
+.axis text {
+  /* font-family: sans-serif; */
+  font-size: 12px;
+}
+
+.tableheader {
+  font-size: 18px;
+}
+
+</style>
+
 <body>
 
   <h2>Berlin Names</h2>
@@ -69,10 +230,15 @@
 
   // colorScale for the Percent numbers
   var percentScale = d3.scaleLinear()
-                        .domain([50,300])
+                        .domain([50,200])
                         .interpolate(d3.interpolateHcl)
                         // .range(["#bfbfbf", "#1aff66"]);
-                        .range(["#0f715d", "#1de2ba"]);
+                        // .range(["#0f715d", "#1de2ba"]);
+                        // .range(["#1de2ba", "#0f715d"]);
+                        // Blues
+                        .range(["#9ecae1", "#3182bd"]);
+                        // .range(["#fb6a4a", "#a50f15"]);
+
 
                         // my green #18bc9c
                         // my blue #2c3e50
@@ -348,7 +514,7 @@ chart.append("g")
                             return 10 + (i * (chartHeight-chartSpaceAxisBars)/bezirkdata.length) +"px";
                           })
                         .attr("width", function(d) { return barScale(d.freq_dev) + 'px'; })
-                        .attr("height", "5px")
+                        .attr("height", "30px")
                         .style("fill", function(d, i) {return percentScale(d.freq_dev);});
 
 
@@ -358,13 +524,15 @@ chart.append("g")
             .enter()
             .append("text")
             .attr("class", "label")
-            .attr("x", function(d) { return (barScale(d.freq_dev) +10) + 'px'; })
+            // .attr("x", function(d) { return (barScale(d.freq_dev) +10) + 'px'; })
+            .attr("x", "10px")
             .attr("y", function(d, i){
-                return 10 + 8 + (i * (chartHeight-chartSpaceAxisBars)/bezirkdata.length) +"px";
+                return 10 + 22 + (i * (chartHeight-chartSpaceAxisBars)/bezirkdata.length) +"px";
               })
             .attr("text-anchor", "start")
             .text(function(d) {return d.vorname;})
-            .style("fill", function(d, i) {return percentScale(d.freq_dev);});
+            // .style("fill", function(d, i) {return percentScale(d.freq_dev);});
+            .style("fill", "white");
 
 
 
@@ -385,9 +553,11 @@ chart.append("g")
             .selectAll(".label")
             .data(bezirkdata)
             .transition(200)
-            .attr("x", function(d) { return (barScale(d.freq_dev) +10) + 'px'; })
+            // .attr("x", function(d) { return (barScale(d.freq_dev) - 100) + 'px'; })
+            .attr("x", "10px")
             .text(function(d) {return d.vorname;})
-            .style("fill", function(d, i) {return percentScale(d.freq_dev);});
+            // .style("fill", function(d, i) {return percentScale(d.freq_dev);});
+            .style("fill", "white");
 
           // d3.select(".")
 
@@ -586,4 +756,6 @@ chart.append("g")
 
 
   </script>
+
+<p>test</p>
 </body>
